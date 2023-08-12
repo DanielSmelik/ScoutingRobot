@@ -1,2 +1,2 @@
 # ScoutingRobot
-My end of 9th grade and summer project. 
+A scouting radio controlled robot, with laser pointers, ultrasonic sensors and more.
