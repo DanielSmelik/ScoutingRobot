@@ -16,7 +16,7 @@ class car {
     long get_turret_dir();
     void turn_turret(long dir);
     void run();
-    
+    void check_distance();
     
 };
 

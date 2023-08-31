@@ -4,6 +4,8 @@
 #include <Wire.h>  
 #include <WEMOS_Motor.h>
 #include <Servo.h>
+#include <iarduino_HC_SR04_tmr.h>
+#include <iarduino_OLED.h>                                 
 //#include "clicli.h"
 
 car::car(int turret_pin){
@@ -22,20 +24,35 @@ Servo turret;
   PPMReader ppm(interruptPin, channelAmount);
     int old_value = 1;
 
+iarduino_HC_SR04_tmr hc(10,9);
+
+iarduino_OLED myOLED(0x3D);                               
+extern uint8_t MediumFont[]; 
 
 void car::begin(){
-
+  pinMode(6, OUTPUT);
+  
   Serial.begin(115200);
   while (!Serial){
     ;
   }
+
   Serial.print("Connected");
+  
   MotorShield.begin();
+  
+  hc.begin();
+  
   turret.attach(_turret_pin);
-
-  Serial.print("_turret_pin :/t");
-  Serial.println(_turret_pin);
-
+  
+  myOLED.begin();      
+  myOLED.setFont(MediumFont);
+  myOLED.print("Hi World!",0,14);  
+  delay(2000);                                                          
+  myOLED.clrScr();
+  myOLED.print("Scouting",0,14); 
+  myOLED.print("Robot: V1",0,35);
+  delay(2000);                                                         
 }
 
 void car::run_motors(int gas, int steering, int dir){
@@ -86,7 +103,16 @@ void car::turn_turret(long turret_dir){
   turret.write(turret_dir); // value bigger than 90 turret left smaller than 90 turret right.  
 }
 
-void car::run(){
+void car::check_distance(){
+  if (hc.distance()<20){
+    myOLED.print("DISTANCE: ", 0,14);
+    myOLED.print(hc.distance(), 0,35);
+    myOLED.print("DANGER!!!", 0, 51);
+  }
+}
+
+void car::run(){  
+  myOLED.clrScr();
   long gas = get_gas();
   long steering = get_steering();
   long dir = get_direction(gas,old_value);
@@ -94,7 +120,8 @@ void car::run(){
 
   run_motors(gas ,steering, dir);
   turn_turret(turret_dir);
-  
+  check_distance();
+
   old_value = dir;
   
   Serial.print(gas);
