@@ -1,7 +1,7 @@
 #include "scouting_car.h"
 //#include "clicli.h"
 
-car mycar(3);
+car mycar(3, 5);
 //clicli mycli(car);  
 
 

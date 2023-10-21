@@ -1,4 +1,4 @@
-#include "scouting_car.h"
+#include "scouting_car.h" 
 #include "Arduino.h"
 #include <PPMReader.h>
 #include <Wire.h>  
@@ -8,8 +8,9 @@
 #include <iarduino_OLED.h>                                 
 //#include "clicli.h"
 
-car::car(int turret_pin){
+car::car(int turret_pin, int gun_pin){
   _turret_pin = turret_pin;
+  _gun_pin = gun_pin;
 }
 
 //creating motor driver obj
@@ -17,9 +18,10 @@ MotorShield MotorShield(MOTORSHIELD_AD11);
 
 //creating servos
 Servo turret;
+Servo gun; 
 
 //setting radio receiver up
-  byte interruptPin =2;
+  byte interruptPin = 2;
   byte channelAmount = 6;
   PPMReader ppm(interruptPin, channelAmount);
     int old_value = 1;
@@ -44,7 +46,8 @@ void car::begin(){
   hc.begin();
   
   turret.attach(_turret_pin);
-  
+  gun.attach(_gun_pin);
+
   myOLED.begin();      
   myOLED.setFont(MediumFont);
   myOLED.print("Hi World!",0,14);  
@@ -99,8 +102,19 @@ long car::get_turret_dir(){
   return dir;
 }
 
+
 void car::turn_turret(long turret_dir){
   turret.write(turret_dir); // value bigger than 90 turret left smaller than 90 turret right.  
+}
+
+long car::get_gun_angle(){
+  unsigned value = ppm.latestValidChannelValue(2, 500); 
+  long gun_ang = map(value,1100,1920,30,150);
+  return value;
+}
+
+void car::aim_gun(long gun_ang){
+  gun.write(gun_ang);
 }
 
 void car::check_distance(){
@@ -117,9 +131,11 @@ void car::run(){
   long steering = get_steering();
   long dir = get_direction(gas,old_value);
   long turret_dir = get_turret_dir();
+  long gun_ang = get_gun_angle();
 
   run_motors(gas ,steering, dir);
   turn_turret(turret_dir);
+  aim_gun(gun_ang);
   check_distance();
 
   old_value = dir;
@@ -131,7 +147,9 @@ void car::run(){
   Serial.print(dir);
   Serial.print('\t');
   Serial.print(turret_dir); 
+  Serial.print('\t');
+  Serial.print(gun_ang);
   Serial.println();
-
+  
   delay(20);
 }
