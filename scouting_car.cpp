@@ -35,6 +35,7 @@ iarduino_HC_SR04_tmr hc(10,9);
 //creating OLED. 
 iarduino_OLED myOLED(0x3D);                               
 extern uint8_t MediumFont[]; 
+extern const uint8_t Img_Battery_3[];
 
 uint32_t old_time = 0;
 
@@ -67,7 +68,8 @@ void car::begin(){
   myOLED.print("Scouting",0,14); 
   myOLED.print("Robot: V1",0,35);
   delay(2000);       
-
+  myOLED.clrScr();
+  myOLED.drawImage(Img_Battery_3, OLED_R, OLED_T);
 }
 
 void car::run_motors(int gas, int steering, int dir){
@@ -104,7 +106,7 @@ int car::get_direction(int gas, int old_value){
     if (dir_value > 1500){return 1;}
     else{
       digitalWrite(8, HIGH);
-      digitalWrite(4, LOW);return -1;
+      digitalWrite(4, HIGH);return -1;
       }
   }
   else {
@@ -134,32 +136,39 @@ void car::aim_gun(long gun_ang){
 }
 
 void car::check_distance(){
-  if (hc.distance()<20){
-    myOLED.print("DISTANCE: ", 0,14);
+  if (millis() - old_time >= 500){
+    myOLED.print("DIST:", 0,14);
     myOLED.print(hc.distance(), 0,35);
-    myOLED.print("DANGER!!!", 0, 51);
+    //old_time = millis();
+  //myOLED.print("" ,3,35);
   }
 }
 
-void car::blinkLEDS(){
-  if (millis() - old_time >=750){
-    digitalWrite(8, !digitalRead(8));
-    digitalWrite(4, !digitalRead(4));
-    old_time = millis();
-    }
-  }
+void car::blinkLEDS() {
+  static bool state = false; // Manually track LED state
 
+  if (millis() - old_time >= 1500) {
+    state = !state;  // Toggle state
+    digitalWrite(8, state);
+    digitalWrite(4, state);
+      if (millis() - old_time >= 1500){
+        state = !state;
+        digitalWrite(8, state);
+        digitalWrite(4, state);
+      }
+    old_time = millis();
+  }
+}
 void car::run(){  
-  myOLED.clrScr();
-  long gas = get_gas();
+  long gas = get_gas(); 
   long steering = get_steering();
   long dir = get_direction(gas,old_value);
-  long turret_dir = get_turret_dir();
-  long gun_ang = get_gun_angle();
+  //long turret_dir = get_turret_dir();
+  //long gun_ang = get_gun_angle();
 
   run_motors(gas ,steering, dir);
-  turn_turret(turret_dir);
-  aim_gun(gun_ang);
+  //turn_turret(turret_dir);
+  //aim_gun(gun_ang);
   check_distance();
 
   if (dir == -1){  
@@ -178,11 +187,13 @@ void car::run(){
   Serial.print('\t');
   Serial.print(dir);
   Serial.print('\t');
-  Serial.print(turret_dir); 
+  //Serial.print(turret_dir); 
   Serial.print('\t');
-  Serial.print(gun_ang);
+  //Serial.print(gun_ang);
   Serial.print('\t');
   Serial.print(old_time);
+  Serial.print('\t');
+  Serial.print(millis());
   Serial.println();
   delay(50);
 }
